@@ -3,10 +3,17 @@
 # TensorRT engine 不能跨设备/跨版本使用，必须在目标设备(Jetson/Orin)上重新生成
 #
 # 用法:
-#   ./onnx2engine.sh                  # 转换 assets/ 下所有 .onnx
-#   ./onnx2engine.sh assets/0526.onnx # 只转换指定模型
+#   ./onnx2engine.sh                  # 转换 assets/ 下所有 .onnx (FP16)
+#   ./onnx2engine.sh assets/0526.onnx # 只转换指定模型 (FP16)
+#   ./onnx2engine.sh --fp32 [xxx.onnx] # 使用 FP32 精度转换
 
 set -e
+
+PRECISION="--fp16"
+if [ "$1" == "--fp32" ]; then
+  PRECISION=""
+  shift
+fi
 
 # 定位 trtexec
 TRTEXEC=$(which trtexec 2>/dev/null || true)
@@ -28,7 +35,7 @@ convert() {
   local onnx="$1"
   local engine="${onnx%.onnx}.engine"
   echo "[INFO] 转换: $onnx -> $engine"
-  "$TRTEXEC" --onnx="$onnx" --saveEngine="$engine" --fp16
+  "$TRTEXEC" --onnx="$onnx" --saveEngine="$engine" $PRECISION
   echo "[INFO] 完成: $engine"
 }
 
