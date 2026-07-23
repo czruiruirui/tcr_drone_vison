@@ -39,7 +39,7 @@ private:
   const int input_h_ = 640;
   const int input_w_ = 640;
   const float nms_threshold_ = 0.3;
-  const float score_threshold_ = 0.7;
+  float score_threshold_ = 0.3;  // 可在 yaml 中通过 score_threshold 配置
   double min_confidence_, binary_threshold_;
   double logit_threshold_ = 0.0;  // score_threshold_ 对应的 logit 阈值，用于 parse 预过滤
 

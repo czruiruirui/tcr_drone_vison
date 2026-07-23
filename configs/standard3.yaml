@@ -9,7 +9,8 @@ yolo11_model_path: assets/yolo11.xml
 yolov8_model_path: assets/yolov8.xml
 yolov5_model_path: assets/0526.engine
 device: CPU
-min_confidence: 0.8
+min_confidence: 0.5
+score_threshold: 0.3
 use_traditional: true
 show_debug: false # 是否显示检测可视化窗口(Jetson 上 imshow 开销大，实测时关闭)
 
