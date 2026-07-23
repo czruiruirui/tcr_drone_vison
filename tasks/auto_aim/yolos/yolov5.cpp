@@ -319,7 +319,12 @@ std::list<Armor> YOLOV5::parse(
   auto h = static_cast<int>(bgr_img.rows * scale);
   int pad_w = (input_w_ - w) / 2;
   int pad_h = (input_h_ - h) / 2;
-  
+
+  static double t_scan_sum = 0, t_nms_sum = 0, t_refine_sum = 0;
+  static long cand_sum = 0, kept_sum = 0;
+  static int profile_count = 0;
+
+  auto t0 = std::chrono::steady_clock::now();
   for (int r = 0; r < output.rows; r++) {
     const float* row = output.ptr<float>(r);
 
@@ -443,8 +448,10 @@ std::list<Armor> YOLOV5::parse(
   }
 
   // NMS
+  auto t1 = std::chrono::steady_clock::now();
   std::vector<int> indices;
   cv::dnn::NMSBoxes(boxes, confidences, score_threshold_, nms_threshold_, indices);
+  auto t2 = std::chrono::steady_clock::now();
 
   std::list<Armor> armors;
   for (const auto & i : indices) {
@@ -499,6 +506,23 @@ std::list<Armor> YOLOV5::parse(
   }
 
   if (debug_) draw_detections(bgr_img, armors, frame_count);
+
+  auto t3 = std::chrono::steady_clock::now();
+  t_scan_sum += std::chrono::duration<double>(t1 - t0).count();
+  t_nms_sum += std::chrono::duration<double>(t2 - t1).count();
+  t_refine_sum += std::chrono::duration<double>(t3 - t2).count();
+  cand_sum += boxes.size();
+  kept_sum += armors.size();
+  if (++profile_count >= 100) {
+    tools::logger()->info(
+      "[parse] scan: {:.2f} ms, nms: {:.2f} ms, refine: {:.2f} ms, candidates: {:.0f}, kept: {:.1f}",
+      t_scan_sum / profile_count * 1e3, t_nms_sum / profile_count * 1e3,
+      t_refine_sum / profile_count * 1e3, static_cast<double>(cand_sum) / profile_count,
+      static_cast<double>(kept_sum) / profile_count);
+    t_scan_sum = t_nms_sum = t_refine_sum = 0;
+    cand_sum = kept_sum = 0;
+    profile_count = 0;
+  }
 
   return armors;
 }
